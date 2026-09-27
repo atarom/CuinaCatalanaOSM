@@ -262,10 +262,7 @@ body {
     0 0 0 4px var(--ac),
     0 0 10px #0007;
   cursor: pointer;
-  transform: translateZ(0);
-  transition:
-    box-shadow 0.15s,
-    transform 0.15s;
+  transition: box-shadow 0.15s;
 }
 .poi-img i {
   display: block;
