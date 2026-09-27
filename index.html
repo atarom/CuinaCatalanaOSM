@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>Cuina catalana OSM</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/maplibre-gl@6.11.1/dist/maplibre-gl.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="loading"><span>Iniciant…</span></div>
+    <div id="map"></div>
+    <div class="list-container">
+      <details class="guide" aria-label="Guia d'ús">
+        <summary title="Com utilitzar el mapa">ℹ️</summary>
+        <div class="guide-panel">
+          <ol>
+            <li>
+              El mapa mostra establiments amb
+              <em>
+                <a
+                  href="https://wiki.openstreetmap.org/wiki/Tag:cuisine%3Dcatalan"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  cuina catalana
+                </a>
+              </em>
+              .
+            </li>
+            <li>
+              A la dreta tens la llista. Els
+              <strong>Sense nom</strong>
+              surten primer per facilitar la revisió.
+            </li>
+            <li>
+              Clic a la llista fa zoom i obre una finestra amb enllaç a OSM.
+            </li>
+            <li>
+              A “Errors potencials” veuràs valors de
+              <code>cuisine</code>
+              semblants (catal...) però no iguals a "catalan"; clica per
+              obrir-les a OSM.
+            </li>
+          </ol>
+        </div>
+      </details>
+      <section class="panel names">
+        <h2 id="list-title"></h2>
+        <ul id="establishment-list"></ul>
+      </section>
+      <div class="shared-content" aria-label="Valors compartits">
+        <section class="panel shared-col">
+          <h3>Mode multivalor</h3>
+          <ul id="shared-left-list"></ul>
+        </section>
+        <section class="panel shared-col">
+          <h3>Mode únics</h3>
+          <ul id="shared-right-list"></ul>
+        </section>
+      </div>
+      <section class="panel errors">
+        <h2 id="error-list-title">Errors potencials</h2>
+        <ul id="error-list"></ul>
+      </section>
+    </div>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
