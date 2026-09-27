@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const Q =
     '[out:json][timeout:32][maxsize:16Mi];nwr[cuisine~"(^|;| )catal",i];out qt tags center;';
   const IMG =
-    "https://wiki.openstreetmap.org/w/images/thumb/3/3f/Catalan_cuisine_IMG_0594.png/320px-Catalan_cuisine_IMG_0594.png";
+    "./MapMarker.png";
   const isCatalan = (e) => /(^|;| )catalan( |;|$)/.test(tidy(e?.tags?.cuisine));
   const map = new maplibregl.Map({
     container: "map",
