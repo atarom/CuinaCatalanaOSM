@@ -21,4 +21,4 @@ Consulta els establiments etiquetats amb `cuisine=catalan`, explora els valors d
 - [MapLibre GL JS](https://maplibre.org/) — renderització del mapa.
 - [OpenFreeMap](https://openfreemap.org/) — estil i tessel·les del mapa.
 - [Overpass API](https://overpass-api.de/) — consulta de dades d’OpenStreetMap.
-- © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) — dades disponibles sota llicència ODbL.
+- [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) — dades disponibles sota llicència ODbL.
