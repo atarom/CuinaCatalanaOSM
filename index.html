@@ -43,6 +43,15 @@
 <ul id="error-list"></ul>
 </details>
 </div>
+<script>
+const mobileSections=[...document.querySelectorAll(".mobile-section")];
+const mobileLayout=window.matchMedia("(max-width: 900px)");
+let wasMobile=mobileLayout.matches;
+const syncMobileSections=()=>{if(mobileLayout.matches){if(!wasMobile)mobileSections.forEach((section,index)=>section.open=index===0);}else{mobileSections.forEach((section)=>section.open=true);}wasMobile=mobileLayout.matches;};
+mobileSections.forEach((section)=>section.addEventListener("toggle",()=>{if(!mobileLayout.matches&&!section.open)section.open=true;}));
+syncMobileSections();
+mobileLayout.addEventListener("change",syncMobileSections);
+</script>
 <script type="module" src="script.js"></script>
 </body>
 </html>
