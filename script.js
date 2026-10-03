@@ -42,9 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const rows = (m) => [...m].map(([v, c]) => ({ v, c })).sort((a, b) => b.c - a.c || a.v.localeCompare(b.v));
   const tags = (t) => Object.entries(t || {}).sort((a, b) => a[0].localeCompare(b[0])).map(([k, v]) => {
     v = Array.isArray(v) ? v.join("; ") : v;
-    return `<div class="tag"><b>${esc(k)}</b><span class="v" title="${esc(v)}">${esc(v)}</span></div>`;
+    const p = k == "amenity" || k == "cuisine" ? " tag-priority" : "";
+    return `<div class="tag${p}"><b>${esc(k)}</b><span class="v" title="${esc(v)}">${esc(v)}</span></div>`;
   }).join("");
-  const card = (o) => `<div class="popup-card"><h3>${esc(o.n)}</h3><div class="tag-list">${tags(o.t)}</div><a class="edit-btn" href="${o.u}" target="_blank" rel="noopener">Veure a OSM</a></div>`;
+  const card = (o) => `<div class="popup-card"><div class="popup-head"><h3>${esc(o.n)}</h3><a class="mobile-osm-btn" href="${o.u}" target="_blank" rel="noopener">OSM ↗</a></div><div class="tag-list">${tags(o.t)}</div><a class="edit-btn" href="${o.u}" target="_blank" rel="noopener">Veure a OSM</a></div>`;
   const usesName = (v) => typeof v == "string" ? v == "name" || /^name[:_]/.test(v) || /\{name(?::[^}]+|_[^}]+)?\}/.test(v) : Array.isArray(v) ? v.some(usesName) : v && typeof v == "object" ? Object.values(v).some(usesName) : false;
   const catalanize = () => (map.getStyle()?.layers || []).forEach((l) => {
     const f = l.layout?.["text-field"];
