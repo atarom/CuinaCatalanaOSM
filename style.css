@@ -678,3 +678,13 @@ body {
     max-height: calc(58dvh - 44px);
   }
 }
+@media (max-width: 900px) {
+  .guide-panel,
+  .guide[open] .guide-panel {
+    border: 0;
+    box-shadow: none;
+  }
+  .guide[open] .guide-panel:before {
+    display: none;
+  }
+}
