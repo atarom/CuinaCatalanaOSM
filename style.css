@@ -781,3 +781,8 @@ body {
     max-height: 54%;
   }
 }
+@media (max-width: 900px) {
+  .panel > .section-title {
+    pointer-events: auto;
+  }
+}
