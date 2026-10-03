@@ -53,6 +53,7 @@ body {
   position: absolute;
   top: 0;
   height: 100vh;
+  height: 100dvh;
 }
 #map {
   left: 0;
@@ -494,6 +495,7 @@ body {
   right: 0;
   width: min(370px, calc(100vw - 20px));
   max-height: 60vh;
+  max-height: 60dvh;
   overflow: auto;
   padding: 10px 12px;
   background: #10191ff2;
@@ -541,21 +543,45 @@ body {
   }
   #map {
     height: 55vh;
+    height: 55svh;
+    height: 55dvh;
   }
   .list-container {
     height: 45vh;
-    padding: 4px 6px;
+    height: 45svh;
+    height: 45dvh;
+    padding: 4px 6px max(4px, env(safe-area-inset-bottom));
     border-left: 0;
     border-top: 1px solid #ffffff14;
   }
   .shared-content {
-    flex-basis: 34%;
+    flex-basis: 28%;
   }
   .errors {
-    max-height: 20%;
+    flex: 0 0 30%;
+    max-height: 30%;
+  }
+  .panel li {
+    min-height: 44px;
   }
   .guide-panel {
     width: min(370px, calc(100vw - 16px));
+    max-height: 55vh;
+    max-height: 55dvh;
+  }
+  .maplibregl-popup {
+    max-width: calc(100vw - 20px) !important;
+  }
+  .maplibregl-popup-content {
+    max-width: calc(100vw - 28px);
+  }
+  .popup-card {
+    min-width: 0;
+    max-width: calc(100vw - 52px);
+  }
+  .tag-list {
+    max-height: 28vh;
+    max-height: 28dvh;
   }
 }
 @media (max-width: 600px) {
@@ -563,8 +589,13 @@ body {
     gap: 4px;
   }
   .shared-content {
+    flex-basis: 26%;
     gap: 4px;
     padding: 7px 0;
+  }
+  .errors {
+    flex-basis: 32%;
+    max-height: 32%;
   }
   .shared-col + .shared-col {
     margin-left: 2px;
@@ -579,5 +610,31 @@ body {
   .panel li {
     padding-top: 7px;
     padding-bottom: 7px;
+  }
+  .errors > h2,
+  .names > h2 {
+    font-size: 1.2rem;
+  }
+  .tag {
+    grid-template-columns: minmax(96px, 40%) 1fr;
+  }
+}
+@media (max-width: 900px) and (orientation: landscape) {
+  #map {
+    height: 58vh;
+    height: 58svh;
+    height: 58dvh;
+  }
+  .list-container {
+    height: 42vh;
+    height: 42svh;
+    height: 42dvh;
+  }
+  .shared-content {
+    flex-basis: 24%;
+  }
+  .errors {
+    flex-basis: 34%;
+    max-height: 34%;
   }
 }
