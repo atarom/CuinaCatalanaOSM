@@ -92,7 +92,9 @@ body {
   flex: 0 0 auto;
   max-height: 18%;
 }
-.errors-toggle {
+.section-toggle,
+.mobile-panel-toggle,
+.mobile-panel-handle {
   display: none;
 }
 .panel > ul {
@@ -100,7 +102,7 @@ body {
   padding: 0;
   list-style: none;
 }
-.panel > :is(h2, h3, #error-list-title) {
+.panel > :is(h3, .section-title) {
   position: sticky;
   top: 0;
   margin: 0;
@@ -117,17 +119,20 @@ body {
   backdrop-filter: blur(6px) saturate(1.2);
   -webkit-backdrop-filter: blur(6px) saturate(1.2);
 }
-.names > h2 {
+.names > .section-title {
   padding: 7px 26px 7px 8px;
   border-radius: 5px;
   font-size: 1.5rem;
+  pointer-events: none;
 }
-.shared-col > h3 {
+.shared-col > .section-title {
   padding: 7px 5px;
   border-radius: 4px;
   font-size: 1rem;
+  font-weight: 700;
+  pointer-events: none;
 }
-.errors > #error-list-title {
+.errors > .section-title {
   display: block;
   margin-top: 5px;
   padding: 8px 0 10px;
@@ -176,7 +181,7 @@ body {
   flex: 1;
   min-width: 0;
 }
-.shared-col + .shared-col {
+.unique-col {
   margin-left: 4px;
 }
 .panel li {
@@ -560,14 +565,8 @@ body {
     border-left: 0;
     border-top: 1px solid #ffffff14;
   }
-  .shared-content {
-    flex-basis: 28%;
-  }
-  .errors {
-    flex: 0 0 auto;
-    max-height: 44%;
-  }
-  .errors-toggle {
+  .mobile-panel-toggle,
+  .section-toggle {
     display: block;
     position: absolute;
     width: 1px;
@@ -575,17 +574,111 @@ body {
     opacity: 0;
     pointer-events: none;
   }
-  .errors > #error-list-title {
+  .mobile-panel-handle {
+    position: fixed;
+    top: calc(55dvh - 20px);
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 40;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 13px;
+    background: #10191ff2;
+    color: #ffe66a;
+    border: 1px solid #f6d32d80;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px #0008;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-panel-toggle:checked + .mobile-panel-handle::before {
+    content: "↑ Només mapa";
+  }
+  .mobile-panel-toggle:not(:checked) + .mobile-panel-handle {
+    top: auto;
+    bottom: max(14px, env(safe-area-inset-bottom));
+  }
+  .mobile-panel-toggle:not(:checked) + .mobile-panel-handle::before {
+    content: "☰ Mostra dades";
+  }
+  .mobile-panel-toggle:not(:checked) ~ #map {
+    height: 100vh;
+    height: 100svh;
+    height: 100dvh;
+  }
+  .mobile-panel-toggle:not(:checked) ~ .list-container {
+    display: none;
+  }
+  .mobile-panel-toggle:focus-visible + .mobile-panel-handle {
+    outline: 2px solid var(--ac);
+    outline-offset: 2px;
+  }
+  .guide {
+    right: 48px;
+  }
+  .names,
+  .errors,
+  .shared-col {
     min-height: 44px;
-    margin-top: 0;
-    padding: 8px 38px 8px 12px;
+  }
+  .names {
+    flex: 1 1 0;
+  }
+  .shared-content {
+    flex: 0 1 auto;
+    max-height: 44%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 7px 0;
+    background: none;
+    overflow: hidden;
+  }
+  .shared-content::before,
+  .shared-content::after {
+    display: none;
+  }
+  .shared-col {
+    flex: 1 1 0;
+    width: 100%;
+  }
+  .unique-col {
+    margin-left: 0;
+  }
+  .errors {
+    flex: 0 1 auto;
+    max-height: 48%;
+  }
+  .section-title {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin: 0;
+    padding: 8px 38px 8px 12px;
+    background: var(--glass);
+    color: var(--ac);
+    border: 1px solid #ffffff18;
+    border-bottom-color: #78abc45c;
+    border-radius: 5px;
+    box-shadow: inset 0 1px #ffffff2b, inset 0 -1px #0004, 0 2px 8px #0003;
+    font-size: 1.08rem;
+    font-weight: 700;
+    text-align: center;
     cursor: pointer;
     pointer-events: auto;
+    backdrop-filter: blur(6px) saturate(1.2);
+    -webkit-backdrop-filter: blur(6px) saturate(1.2);
+    -webkit-tap-highlight-color: transparent;
   }
-  .errors > #error-list-title::after {
+  .section-title::after {
     content: "+";
     position: absolute;
     right: 12px;
@@ -595,15 +688,31 @@ body {
     font-size: 1.45rem;
     line-height: 1;
   }
-  .errors-toggle:checked + #error-list-title::after {
+  .section-toggle:checked + .names > .section-title::after,
+  .section-toggle:checked + .shared-col > .section-title::after,
+  .section-toggle:checked + .errors > .section-title::after {
     content: "−";
   }
-  .errors-toggle:not(:checked) ~ #error-list {
-    display: none;
-  }
-  .errors-toggle:focus-visible + #error-list-title {
+  .section-toggle:focus-visible + .names > .section-title,
+  .section-toggle:focus-visible + .shared-col > .section-title,
+  .section-toggle:focus-visible + .errors > .section-title {
     outline: 2px solid var(--ac);
     outline-offset: -2px;
+  }
+  .names-toggle:not(:checked) + .names,
+  .multi-toggle:not(:checked) + .shared-col,
+  .unique-toggle:not(:checked) + .shared-col,
+  .errors-toggle:not(:checked) + .errors {
+    flex: 0 0 44px;
+    min-height: 44px;
+    max-height: 44px;
+    overflow: hidden;
+  }
+  .names-toggle:not(:checked) + .names #establishment-list,
+  .multi-toggle:not(:checked) + .shared-col #shared-left-list,
+  .unique-toggle:not(:checked) + .shared-col #shared-right-list,
+  .errors-toggle:not(:checked) + .errors #error-list {
+    display: none;
   }
   .panel li {
     min-height: 44px;
@@ -633,18 +742,8 @@ body {
     gap: 4px;
   }
   .shared-content {
-    flex-basis: 26%;
-    gap: 4px;
-    padding: 7px 0;
-  }
-  .errors {
     max-height: 48%;
-  }
-  .shared-col + .shared-col {
-    margin-left: 2px;
-  }
-  .shared-col > h3 {
-    font-size: 0.9rem;
+    gap: 4px;
   }
   .badge {
     min-width: 30px;
@@ -654,9 +753,8 @@ body {
     padding-top: 7px;
     padding-bottom: 7px;
   }
-  .errors > #error-list-title,
-  .names > h2 {
-    font-size: 1.2rem;
+  .section-title {
+    font-size: 1.02rem;
   }
   .tag {
     grid-template-columns: minmax(96px, 40%) 1fr;
@@ -673,10 +771,13 @@ body {
     height: 42svh;
     height: 42dvh;
   }
-  .shared-content {
-    flex-basis: 24%;
+  .mobile-panel-handle {
+    top: calc(58dvh - 20px);
   }
-  .errors {
-    max-height: 52%;
+  .mobile-panel-toggle:not(:checked) + .mobile-panel-handle {
+    top: auto;
+  }
+  .shared-content {
+    max-height: 54%;
   }
 }

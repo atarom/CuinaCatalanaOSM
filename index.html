@@ -15,8 +15,10 @@
   </head>
   <body>
     <div id="loading"><span>Iniciant…</span></div>
+    <input class="mobile-panel-toggle" type="checkbox" id="mobile-panel-toggle" aria-controls="data-panel" aria-label="Mostra o amaga el panell de dades" checked />
+    <label class="mobile-panel-handle" for="mobile-panel-toggle"></label>
     <div id="map"></div>
-    <div class="list-container">
+    <div class="list-container" id="data-panel">
       <details class="guide" aria-label="Guia d'ús">
         <summary title="Com utilitzar el mapa">ℹ️</summary>
         <div class="guide-panel">
@@ -35,7 +37,7 @@
               .
             </li>
             <li>
-              A la dreta tens la llista. Els
+              Al panell de dades tens la llista. Els
               <strong>Sense nom</strong>
               surten primer per facilitar la revisió.
             </li>
@@ -43,31 +45,33 @@
               Clic a la llista fa zoom i obre una finestra amb enllaç a OSM.
             </li>
             <li>
-              A “Errors potencials” veuràs valors de
-              <code>cuisine</code>
-              semblants (catal...) però no iguals a "catalan"; clica per
-              obrir-les a OSM.
+              En pantalles petites pots plegar les seccions o deixar només el mapa.
+              A “Errors potencials” veuràs valors de <code>cuisine</code> semblants
+              (catal...) però no iguals a "catalan"; clica per obrir-les a OSM.
             </li>
           </ol>
         </div>
       </details>
+      <input class="section-toggle names-toggle" type="checkbox" id="names-toggle" aria-controls="establishment-list" checked />
       <section class="panel names">
-        <h2 id="list-title"></h2>
+        <label class="section-title" id="list-title" for="names-toggle"></label>
         <ul id="establishment-list"></ul>
       </section>
       <div class="shared-content" aria-label="Valors compartits">
-        <section class="panel shared-col">
-          <h3>Mode multivalor</h3>
+        <input class="section-toggle multi-toggle" type="checkbox" id="multi-toggle" aria-controls="shared-left-list" />
+        <section class="panel shared-col multi-col">
+          <label class="section-title" for="multi-toggle">Mode multivalor</label>
           <ul id="shared-left-list"></ul>
         </section>
-        <section class="panel shared-col">
-          <h3>Mode únics</h3>
+        <input class="section-toggle unique-toggle" type="checkbox" id="unique-toggle" aria-controls="shared-right-list" />
+        <section class="panel shared-col unique-col">
+          <label class="section-title" for="unique-toggle">Mode únics</label>
           <ul id="shared-right-list"></ul>
         </section>
       </div>
+      <input class="section-toggle errors-toggle" type="checkbox" id="errors-toggle" aria-controls="error-list" />
       <section class="panel errors">
-        <input class="errors-toggle" type="checkbox" id="errors-toggle" aria-controls="error-list" aria-label="Mostra o amaga errors potencials" />
-        <label id="error-list-title" for="errors-toggle">Errors potencials</label>
+        <label class="section-title" id="error-list-title" for="errors-toggle">Errors potencials</label>
         <ul id="error-list"></ul>
       </section>
     </div>
