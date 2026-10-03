@@ -810,3 +810,11 @@ body {
     max-height: calc(58dvh - 44px);
   }
 }
+@media (max-width: 900px) {
+  .guide-panel,
+  .guide[open] .guide-panel {
+    background: #10191f;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
