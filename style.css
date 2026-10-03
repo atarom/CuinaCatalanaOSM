@@ -92,7 +92,6 @@ body {
   flex: 0 0 auto;
   max-height: 18%;
 }
-.section-toggle,
 .mobile-panel-toggle,
 .mobile-panel-handle {
   display: none;
@@ -123,14 +122,12 @@ body {
   padding: 7px 26px 7px 8px;
   border-radius: 5px;
   font-size: 1.5rem;
-  pointer-events: none;
 }
 .shared-col > .section-title {
   padding: 7px 5px;
   border-radius: 4px;
   font-size: 1rem;
   font-weight: 700;
-  pointer-events: none;
 }
 .errors > .section-title {
   display: block;
@@ -139,7 +136,15 @@ body {
   border-radius: 4px;
   font-size: 1.5rem;
   font-weight: 700;
-  pointer-events: none;
+}
+.mobile-section > .section-title {
+  list-style: none;
+}
+.mobile-section > .section-title::-webkit-details-marker {
+  display: none;
+}
+.mobile-section > .section-title::marker {
+  content: "";
 }
 .shared-content {
   position: relative;
@@ -546,6 +551,14 @@ body {
 .guide[open] .guide-panel:before {
   box-shadow: inset 0 0 0 1px #f6d32d55;
 }
+@media (min-width: 901px) {
+  .mobile-section:not([open]) > ul {
+    display: block;
+  }
+  .mobile-section > .section-title {
+    pointer-events: none;
+  }
+}
 @media (max-width: 900px) {
   #map,
   .list-container {
@@ -561,12 +574,12 @@ body {
     height: 45vh;
     height: 45svh;
     height: 45dvh;
-    padding: 4px 6px max(4px, env(safe-area-inset-bottom));
+    gap: 4px;
+    padding: 48px 6px max(4px, env(safe-area-inset-bottom));
     border-left: 0;
     border-top: 1px solid #ffffff14;
   }
-  .mobile-panel-toggle,
-  .section-toggle {
+  .mobile-panel-toggle {
     display: block;
     position: absolute;
     width: 1px;
@@ -576,20 +589,20 @@ body {
   }
   .mobile-panel-handle {
     position: fixed;
-    top: calc(55dvh - 20px);
-    right: max(10px, env(safe-area-inset-right));
+    top: calc(55dvh + 6px);
+    right: max(8px, env(safe-area-inset-right));
     z-index: 40;
-    min-height: 40px;
+    min-height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 13px;
+    padding: 0 12px;
     background: #10191ff2;
     color: #ffe66a;
     border: 1px solid #f6d32d80;
     border-radius: 999px;
-    box-shadow: 0 4px 14px #0008;
-    font-size: 0.86rem;
+    box-shadow: 0 3px 10px #0007;
+    font-size: 0.84rem;
     font-weight: 700;
     cursor: pointer;
     user-select: none;
@@ -599,8 +612,8 @@ body {
     content: "↑ Només mapa";
   }
   .mobile-panel-toggle:not(:checked) + .mobile-panel-handle {
-    top: auto;
-    bottom: max(14px, env(safe-area-inset-bottom));
+    top: max(8px, env(safe-area-inset-top));
+    bottom: auto;
   }
   .mobile-panel-toggle:not(:checked) + .mobile-panel-handle::before {
     content: "☰ Mostra dades";
@@ -618,42 +631,50 @@ body {
     outline-offset: 2px;
   }
   .guide {
-    right: 48px;
+    top: 8px;
+    left: 8px;
+    right: auto;
   }
-  .names,
-  .errors,
-  .shared-col {
-    min-height: 44px;
-  }
-  .names {
-    flex: 1 1 0;
+  .guide-panel {
+    left: 0;
+    right: auto;
+    width: min(370px, calc(100vw - 16px));
+    max-height: 55vh;
+    max-height: 55dvh;
   }
   .shared-content {
-    flex: 0 1 auto;
-    max-height: 44%;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 7px 0;
-    background: none;
-    overflow: hidden;
+    display: contents;
   }
   .shared-content::before,
   .shared-content::after {
     display: none;
   }
-  .shared-col {
-    flex: 1 1 0;
+  .mobile-section {
     width: 100%;
+    min-height: 44px;
+    max-height: none;
   }
-  .unique-col {
-    margin-left: 0;
+  .mobile-section[open] {
+    flex: 1 1 0;
+    min-height: 44px;
+    max-height: none;
+    overflow-y: auto;
   }
+  .mobile-section:not([open]) {
+    flex: 0 0 44px;
+    min-height: 44px;
+    max-height: 44px;
+    overflow: hidden;
+  }
+  .mobile-section:not([open]) > ul {
+    display: none;
+  }
+  .shared-col,
+  .names,
   .errors {
-    flex: 0 1 auto;
-    max-height: 48%;
+    margin: 0;
   }
-  .section-title {
+  .mobile-section > .section-title {
     position: sticky;
     top: 0;
     z-index: 5;
@@ -678,7 +699,7 @@ body {
     -webkit-backdrop-filter: blur(6px) saturate(1.2);
     -webkit-tap-highlight-color: transparent;
   }
-  .section-title::after {
+  .mobile-section > .section-title::after {
     content: "+";
     position: absolute;
     right: 12px;
@@ -688,39 +709,15 @@ body {
     font-size: 1.45rem;
     line-height: 1;
   }
-  .section-toggle:checked + .names > .section-title::after,
-  .section-toggle:checked + .shared-col > .section-title::after,
-  .section-toggle:checked + .errors > .section-title::after {
+  .mobile-section[open] > .section-title::after {
     content: "−";
   }
-  .section-toggle:focus-visible + .names > .section-title,
-  .section-toggle:focus-visible + .shared-col > .section-title,
-  .section-toggle:focus-visible + .errors > .section-title {
+  .mobile-section > .section-title:focus-visible {
     outline: 2px solid var(--ac);
     outline-offset: -2px;
   }
-  .names-toggle:not(:checked) + .names,
-  .multi-toggle:not(:checked) + .shared-col,
-  .unique-toggle:not(:checked) + .shared-col,
-  .errors-toggle:not(:checked) + .errors {
-    flex: 0 0 44px;
-    min-height: 44px;
-    max-height: 44px;
-    overflow: hidden;
-  }
-  .names-toggle:not(:checked) + .names #establishment-list,
-  .multi-toggle:not(:checked) + .shared-col #shared-left-list,
-  .unique-toggle:not(:checked) + .shared-col #shared-right-list,
-  .errors-toggle:not(:checked) + .errors #error-list {
-    display: none;
-  }
   .panel li {
     min-height: 44px;
-  }
-  .guide-panel {
-    width: min(370px, calc(100vw - 16px));
-    max-height: 55vh;
-    max-height: 55dvh;
   }
   .maplibregl-popup {
     max-width: calc(100vw - 20px) !important;
@@ -738,13 +735,6 @@ body {
   }
 }
 @media (max-width: 600px) {
-  .list-container {
-    gap: 4px;
-  }
-  .shared-content {
-    max-height: 48%;
-    gap: 4px;
-  }
   .badge {
     min-width: 30px;
     padding: 2px 5px;
@@ -753,7 +743,7 @@ body {
     padding-top: 7px;
     padding-bottom: 7px;
   }
-  .section-title {
+  .mobile-section > .section-title {
     font-size: 1.02rem;
   }
   .tag {
@@ -772,17 +762,9 @@ body {
     height: 42dvh;
   }
   .mobile-panel-handle {
-    top: calc(58dvh - 20px);
+    top: calc(58dvh + 6px);
   }
   .mobile-panel-toggle:not(:checked) + .mobile-panel-handle {
-    top: auto;
-  }
-  .shared-content {
-    max-height: 54%;
-  }
-}
-@media (max-width: 900px) {
-  .panel > .section-title {
-    pointer-events: auto;
+    top: max(8px, env(safe-area-inset-top));
   }
 }

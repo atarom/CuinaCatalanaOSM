@@ -1,80 +1,48 @@
 <!doctype html>
 <html lang="ca">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover"
-    />
-    <title>Cuina catalana OSM</title>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/maplibre-gl@6.11.1/dist/maplibre-gl.css"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div id="loading"><span>Iniciant…</span></div>
-    <input class="mobile-panel-toggle" type="checkbox" id="mobile-panel-toggle" aria-controls="data-panel" aria-label="Mostra o amaga el panell de dades" checked />
-    <label class="mobile-panel-handle" for="mobile-panel-toggle"></label>
-    <div id="map"></div>
-    <div class="list-container" id="data-panel">
-      <details class="guide" aria-label="Guia d'ús">
-        <summary title="Com utilitzar el mapa">ℹ️</summary>
-        <div class="guide-panel">
-          <ol>
-            <li>
-              El mapa mostra establiments amb
-              <em>
-                <a
-                  href="https://wiki.openstreetmap.org/wiki/Tag:cuisine%3Dcatalan"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  cuina catalana
-                </a>
-              </em>
-              .
-            </li>
-            <li>
-              Al panell de dades tens la llista. Els
-              <strong>Sense nom</strong>
-              surten primer per facilitar la revisió.
-            </li>
-            <li>
-              Clic a la llista fa zoom i obre una finestra amb enllaç a OSM.
-            </li>
-            <li>
-              En pantalles petites pots plegar les seccions o deixar només el mapa.
-              A “Errors potencials” veuràs valors de <code>cuisine</code> semblants
-              (catal...) però no iguals a "catalan"; clica per obrir-les a OSM.
-            </li>
-          </ol>
-        </div>
-      </details>
-      <input class="section-toggle names-toggle" type="checkbox" id="names-toggle" aria-controls="establishment-list" checked />
-      <section class="panel names">
-        <label class="section-title" id="list-title" for="names-toggle"></label>
-        <ul id="establishment-list"></ul>
-      </section>
-      <div class="shared-content" aria-label="Valors compartits">
-        <input class="section-toggle multi-toggle" type="checkbox" id="multi-toggle" aria-controls="shared-left-list" />
-        <section class="panel shared-col multi-col">
-          <label class="section-title" for="multi-toggle">Mode multivalor</label>
-          <ul id="shared-left-list"></ul>
-        </section>
-        <input class="section-toggle unique-toggle" type="checkbox" id="unique-toggle" aria-controls="shared-right-list" />
-        <section class="panel shared-col unique-col">
-          <label class="section-title" for="unique-toggle">Mode únics</label>
-          <ul id="shared-right-list"></ul>
-        </section>
-      </div>
-      <input class="section-toggle errors-toggle" type="checkbox" id="errors-toggle" aria-controls="error-list" />
-      <section class="panel errors">
-        <label class="section-title" id="error-list-title" for="errors-toggle">Errors potencials</label>
-        <ul id="error-list"></ul>
-      </section>
-    </div>
-    <script type="module" src="script.js"></script>
-  </body>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Cuina catalana OSM</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.11.1/dist/maplibre-gl.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="loading"><span>Iniciant…</span></div>
+<input class="mobile-panel-toggle" type="checkbox" id="mobile-panel-toggle" aria-controls="data-panel" aria-label="Mostra o amaga el panell de dades" checked />
+<label class="mobile-panel-handle" for="mobile-panel-toggle"></label>
+<div id="map"></div>
+<div class="list-container" id="data-panel">
+<details class="guide" aria-label="Guia d'ús">
+<summary title="Com utilitzar el mapa">ℹ️</summary>
+<div class="guide-panel">
+<ol>
+<li>El mapa mostra establiments amb <em><a href="https://wiki.openstreetmap.org/wiki/Tag:cuisine%3Dcatalan" target="_blank" rel="noopener noreferrer">cuina catalana</a></em>.</li>
+<li>Al panell de dades tens la llista. Els <strong>Sense nom</strong> surten primer per facilitar la revisió.</li>
+<li>Clic a la llista fa zoom i obre una finestra amb enllaç a OSM.</li>
+<li>En pantalles petites pots plegar les seccions o deixar només el mapa. A “Errors potencials” veuràs valors de <code>cuisine</code> semblants (catal...) però no iguals a "catalan"; clica per obrir-les a OSM.</li>
+</ol>
+</div>
+</details>
+<details class="panel names mobile-section" open>
+<summary class="section-title" id="list-title"></summary>
+<ul id="establishment-list"></ul>
+</details>
+<div class="shared-content" aria-label="Valors compartits">
+<details class="panel shared-col multi-col mobile-section">
+<summary class="section-title">Mode multivalor</summary>
+<ul id="shared-left-list"></ul>
+</details>
+<details class="panel shared-col unique-col mobile-section">
+<summary class="section-title">Mode únics</summary>
+<ul id="shared-right-list"></ul>
+</details>
+</div>
+<details class="panel errors mobile-section">
+<summary class="section-title" id="error-list-title">Errors potencials</summary>
+<ul id="error-list"></ul>
+</details>
+</div>
+<script type="module" src="script.js"></script>
+</body>
 </html>
