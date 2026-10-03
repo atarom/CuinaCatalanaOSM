@@ -768,3 +768,45 @@ body {
     top: max(8px, env(safe-area-inset-top));
   }
 }
+@media (max-width: 900px) {
+  .guide-panel {
+    width: calc(100vw - 16px);
+    max-height: calc(45dvh - 56px - env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .maplibregl-popup-content {
+    max-height: calc(55dvh - 24px);
+    overflow: hidden;
+  }
+  .popup-card {
+    max-height: calc(55dvh - 44px);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+  }
+  .popup-card h3 {
+    padding-right: 36px;
+  }
+  .tag-list {
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .edit-btn {
+    min-height: 44px;
+    flex: 0 0 auto;
+  }
+}
+@media (max-width: 900px) and (orientation: landscape) {
+  .guide-panel {
+    max-height: calc(42dvh - 56px - env(safe-area-inset-bottom));
+  }
+  .maplibregl-popup-content {
+    max-height: calc(58dvh - 24px);
+  }
+  .popup-card {
+    max-height: calc(58dvh - 44px);
+  }
+}
