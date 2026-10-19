@@ -10,24 +10,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const tidy = (s) => typeof s == "string" && s.trim() ? s.trim() : "";
   const num = Number.isFinite;
   const valid = (p) => Array.isArray(p) && p.length > 1 && num(p[0]) && num(p[1]);
-  const pos = (e) => e.type == "node" ? [e.lon, e.lat] : [e.center?.lon, e.center?.lat];
-  const ok = (d) => d && typeof d == "object" && !d.remark && !d.error && Array.isArray(d.elements);
-  const json = async (u) => {
-    const k = "overpass:" + u;
+  const pos = (e) => e?.geometry?.type == "Point" ? e.geometry.coordinates : null;
+  const ok = (d) => d && d.type == "FeatureCollection" && Array.isArray(d.features);
+  const json = async () => {
+    const k = "postpass:" + Q;
     let c;
     try { c = JSON.parse(localStorage.getItem(k)); } catch {}
     if (c && ok(c.d) && Date.now() - c.t < 60000) return c.d;
-    const r = await fetch(u);
-    if (!r.ok) throw new Error(`Overpass HTTP ${r.status} ${r.statusText}`);
+    const r = await fetch(PP + "?data=" + encodeURIComponent(Q));
+    if (!r.ok) throw new Error(`Postpass HTTP ${r.status} ${r.statusText}`);
     const d = await r.json();
-    if (!ok(d)) throw new Error(d?.remark || d?.error || "Resposta invàlida d'Overpass");
+    if (!ok(d)) throw new Error(d?.error || "Resposta invàlida de Postpass");
     try { localStorage.setItem(k, JSON.stringify({ t: Date.now(), d })); } catch {}
     return d;
   };
-  const OP = "https://overpass-api.de/api/interpreter?data=";
-  const Q = '[out:json][timeout:32][maxsize:16Mi];nwr[cuisine~"(^|;| )catal",i];out qt tags center;';
+  const PP = "https://postpass.geofabrik.de/api/interpreter";
+  const Q = "SELECT DISTINCT ON (osm_type, osm_id) osm_type, osm_id, tags, ST_Centroid(ST_Envelope(geom)) AS geom FROM postpass_pointlinepolygon WHERE tags ? 'cuisine' AND tags->>'cuisine' ~* '(^|;| )catal' ORDER BY osm_type, osm_id, ST_Dimension(geom) DESC";
   const IMG = "./MapMarker.png";
-  const isCatalan = (e) => /(^|;| )catalan( |;|$)/.test(tidy(e?.tags?.cuisine));
+  const isCatalan = (e) => /(^|;| )catalan( |;|$)/.test(tidy(e?.properties?.tags?.cuisine));
   const map = new maplibregl.Map({ container: "map", style: "https://tiles.openfreemap.org/styles/bright", center: [1.6, 41.6], zoom: 8, minZoom: 0, maxZoom: 18, renderWorldCopies: false, attributionControl: false });
   const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "520px", offset: 38 });
   const markers = {};
@@ -88,8 +88,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return li;
   }));
   const proc = (a) => Array.isArray(a) ? a.map((e) => {
-    const t = e?.tags || {}, p = pos(e || {}), n = tidy(t.name), raw = tidy(t.cuisine) || "Sense etiqueta";
-    return { n: n || "❌Sense nom❌", isU: !n, p: valid(p) ? p : null, u: href(e?.type || "", e?.id || ""), t, raw, vals: raw == "Sense etiqueta" ? [] : raw.split(";").map(tidy).filter(Boolean) };
+    const t = e?.properties?.tags || {}, p = pos(e), n = tidy(t.name), raw = tidy(t.cuisine) || "Sense etiqueta";
+    const type = { N: "node", W: "way", R: "relation" }[e?.properties?.osm_type];
+    return { n: n || "❌Sense nom❌", isU: !n, p: valid(p) ? p : null, u: href(type || "", e?.properties?.osm_id ?? ""), t, raw, vals: raw == "Sense etiqueta" ? [] : raw.split(";").map(tidy).filter(Boolean) };
   }).filter((o) => valid(o.p)).sort((a, b) => a.isU == b.isU ? a.n.localeCompare(b.n) : a.isU ? -1 : 1).map((o, i) => ({ ...o, i })) : [];
   const fitAll = (a) => {
     const b = a.reduce((b, o) => b.extend(o.p), new maplibregl.LngLatBounds());
@@ -197,8 +198,8 @@ document.addEventListener("DOMContentLoaded", () => {
       closePopup();
     });
     msg("Descarregant…");
-    const r = await json(OP + encodeURIComponent(Q)), good = [], bad = [];
-    r.elements.forEach((e) => (isCatalan(e) ? good : bad).push(e));
+    const r = await json(), good = [], bad = [];
+    r.features.forEach((e) => (isCatalan(e) ? good : bad).push(e));
     all = proc(good);
     $("list-title").textContent = `${all.length} establiments amb cuina catalana`;
     el.replaceChildren(...all.map((o) => {
