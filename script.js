@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return d;
   };
   const PP = "https://postpass.geofabrik.de/api/interpreter";
-  const Q = "SELECT DISTINCT ON (osm_type, osm_id) osm_type, osm_id, tags, ST_Centroid(ST_Envelope(geom)) AS geom FROM postpass_pointlinepolygon WHERE tags ? 'cuisine' AND tags->>'cuisine' ~* '(^|;| )catal' ORDER BY osm_type, osm_id, ST_Dimension(geom) DESC";
+  const Q = "SELECT DISTINCT ON (osm_type, osm_id) osm_type, osm_id, tags, ST_Centroid(ST_Envelope(geom)) AS geom FROM postpass_pointlinepolygon WHERE tags ? 'cuisine' AND tags @? '$.cuisine ? (@ like_regex \"(^|;| )catal\" flag \"i\")' ORDER BY osm_type, osm_id, ST_Dimension(geom) DESC";
   const IMG = "./MapMarker.png";
   const isCatalan = (e) => /(^|;| )catalan( |;|$)/.test(tidy(e?.properties?.tags?.cuisine));
   const map = new maplibregl.Map({ container: "map", style: "https://tiles.openfreemap.org/styles/bright", center: [1.6, 41.6], zoom: 8, minZoom: 0, maxZoom: 18, renderWorldCopies: false, attributionControl: false });
