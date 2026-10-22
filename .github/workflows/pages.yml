@@ -26,16 +26,21 @@ jobs:
       - name: Generar dades i comparar
         id: data
         run: node build-data.mjs
-      - name: Registrar activitat periòdica
-        if: github.event_name == 'schedule'
+      - name: Registrar historial i activitat periòdica
         run: |
-          age=$(( $(date -u +%s) - $(git log -1 --format=%ct) ))
-          if [ "$age" -ge 3888000 ]; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git -c commit.gpgsign=false commit --allow-empty -m 'chore: comprovació periòdica de dades'
-            if ! git push origin HEAD:main; then
-              echo '::warning::No s’ha pogut registrar activitat a main'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add history.json
+          if ! git diff --cached --quiet; then
+            git -c commit.gpgsign=false commit -m 'data: registrar historial de cuina catalana'
+            git push origin HEAD:main
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            age=$(( $(date -u +%s) - $(git log -1 --format=%ct) ))
+            if [ "$age" -ge 3888000 ]; then
+              git -c commit.gpgsign=false commit --allow-empty -m 'chore: comprovació periòdica de dades'
+              if ! git push origin HEAD:main; then
+                echo '::warning::No s’ha pogut registrar activitat a main'
+              fi
             fi
           fi
       - uses: actions/configure-pages@v6
