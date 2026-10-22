@@ -1,0 +1,45 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { cooldownSeconds, fetchPostpass, prepareSnapshot, validSnapshot } from "./data-core.mjs";
+const feature = (id, name, cuisine, type = "N") => ({ type: "Feature", geometry: { type: "Point", coordinates: [2.1 + id / 100, 41.3] }, properties: { osm_type: type, osm_id: id, tags: { name, cuisine, amenity: "restaurant" } } });
+const response = { type: "FeatureCollection", features: [feature(1, "", "catalan;mediterranean"), feature(2, "Restaurant", "catalan"), feature(3, "Error", "catalana"), feature(4, "Bar", "catalan;mediterranean", "W")] };
+test("manté establiments, comptadors, etiquetes i possibles errors", () => {
+  const snapshot = prepareSnapshot(response, "2026-10-22T04:17:00.000Z");
+  assert.ok(validSnapshot(snapshot));
+  assert.equal(snapshot.all.length, 3);
+  assert.equal(snapshot.all[0].n, "❌Sense nom❌");
+  assert.equal(snapshot.all[0].t.amenity, "restaurant");
+  assert.deepEqual(snapshot.multi, [{ v: "catalan;mediterranean", c: 2 }, { v: "catalan", c: 1 }]);
+  assert.deepEqual(snapshot.unique, [{ v: "catalan", c: 3 }, { v: "mediterranean", c: 2 }]);
+  assert.equal(snapshot.errors[0].c, "catalana");
+  assert.equal(snapshot.all[2].u, "https://www.openstreetmap.org/node/2");
+});
+test("rebutja dades buides o corruptes", () => {
+  assert.throws(() => prepareSnapshot({ type: "FeatureCollection", features: [] }));
+  assert.throws(() => prepareSnapshot({ type: "FeatureCollection", features: [feature(1, "Error", "catalana")] }));
+  assert.equal(validSnapshot({ version: 1, updatedAt: "avui", all: [], multi: [], unique: [], errors: [] }), false);
+});
+test("consulta Postpass sense caché i gestiona errors", async () => {
+  const previousFetch = globalThis.fetch;
+  try {
+    let url, options;
+    globalThis.fetch = async (u, o) => { url = u; options = o; return { ok: true, json: async () => response }; };
+    assert.deepEqual(await fetchPostpass(), response);
+    assert.ok(url.includes("postpass.geofabrik.de/api/interpreter?data="));
+    assert.equal(options.cache, "no-store");
+    globalThis.fetch = async () => ({ ok: false, status: 503, statusText: "Unavailable" });
+    await assert.rejects(fetchPostpass(), /Postpass HTTP 503/);
+    globalThis.fetch = async () => ({ ok: true, json: async () => ({ type: "FeatureCollection", features: [] }) });
+    await assert.rejects(fetchPostpass(), /buida/);
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
+test("respecta els 180 segons entre consultes manuals", () => {
+  assert.equal(cooldownSeconds(1000, 1000), 180);
+  assert.equal(cooldownSeconds(1000, 2000), 179);
+  assert.equal(cooldownSeconds(1000, 180999), 1);
+  assert.equal(cooldownSeconds(1000, 181000), 0);
+  assert.equal(cooldownSeconds(0, 1000), 0);
+  assert.equal(cooldownSeconds(2000, 1000), 0);
+});

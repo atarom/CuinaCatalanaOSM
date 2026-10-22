@@ -1,33 +1,16 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.11.1/dist/maplibre-gl.mjs";
+import { cooldownSeconds, fetchPostpass, prepareSnapshot, validSnapshot } from "./data-core.mjs";
 document.addEventListener("DOMContentLoaded", () => {
   const $ = document.getElementById.bind(document);
   const ce = (t, c, x) => Object.assign(document.createElement(t), { className: c || "", textContent: x ?? "" });
-  const ld = $("loading"), er = $("error-list"), el = $("establishment-list"), ml = $("shared-left-list"), ul = $("shared-right-list");
+  const ld = $("loading"), er = $("error-list"), el = $("establishment-list"), ml = $("shared-left-list"), ul = $("shared-right-list"), refresh = $("refresh-data"), age = $("data-age");
   const show = (v) => (ld.style.display = v ? "flex" : "none");
   const msg = (s) => (ld.firstElementChild.textContent = s);
   const ent = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
   const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ent[m]);
-  const tidy = (s) => typeof s == "string" && s.trim() ? s.trim() : "";
   const num = Number.isFinite;
   const valid = (p) => Array.isArray(p) && p.length > 1 && num(p[0]) && num(p[1]);
-  const pos = (e) => e?.geometry?.type == "Point" ? e.geometry.coordinates : null;
-  const ok = (d) => d && d.type == "FeatureCollection" && Array.isArray(d.features);
-  const json = async () => {
-    const k = "postpass:" + Q;
-    let c;
-    try { c = JSON.parse(localStorage.getItem(k)); } catch {}
-    if (c && ok(c.d) && Date.now() - c.t < 60000) return c.d;
-    const r = await fetch(PP + "?data=" + encodeURIComponent(Q));
-    if (!r.ok) throw new Error(`Postpass HTTP ${r.status} ${r.statusText}`);
-    const d = await r.json();
-    if (!ok(d)) throw new Error(d?.error || "Resposta invàlida de Postpass");
-    try { localStorage.setItem(k, JSON.stringify({ t: Date.now(), d })); } catch {}
-    return d;
-  };
-  const PP = "https://postpass.geofabrik.de/api/interpreter";
-  const Q = "SELECT DISTINCT ON (osm_type, osm_id) osm_type, osm_id, tags, ST_Centroid(ST_Envelope(geom)) AS geom FROM postpass_pointlinepolygon WHERE tags ? 'cuisine' AND tags @? '$.cuisine ? (@ like_regex \"(^|;| )catal\" flag \"i\")' ORDER BY osm_type, osm_id, ST_Dimension(geom) DESC";
   const IMG = "./MapMarker.png";
-  const isCatalan = (e) => /(^|;| )catalan( |;|$)/.test(tidy(e?.properties?.tags?.cuisine));
   const map = new maplibregl.Map({ container: "map", style: "https://tiles.openfreemap.org/styles/bright", center: [1.6, 41.6], zoom: 8, minZoom: 0, maxZoom: 18, renderWorldCopies: false, attributionControl: false });
   const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "520px", offset: 38 });
   const markers = {};
@@ -38,8 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const clr = () => rm("#shared-left-list li.selected,#shared-right-list li.selected,#establishment-list li.selected,#error-list li.selected");
   const clrN = () => rm("#establishment-list li.selected");
   const blur = (v) => $("map").classList.toggle("blur-map", !!v);
-  const href = (t, id) => `https://www.openstreetmap.org/${t}/${id}`;
-  const rows = (m) => [...m].map(([v, c]) => ({ v, c })).sort((a, b) => b.c - a.c || a.v.localeCompare(b.v));
   const tags = (t) => Object.entries(t || {}).sort((a, b) => a[0].localeCompare(b[0])).map(([k, v]) => {
     v = Array.isArray(v) ? v.join("; ") : v;
     const p = k == "amenity" || k == "cuisine" ? " tag-priority" : "";
@@ -87,11 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
     li.append(ce("span", "badge", c), ce("span", "text", v));
     return li;
   }));
-  const proc = (a) => Array.isArray(a) ? a.map((e) => {
-    const t = e?.properties?.tags || {}, p = pos(e), n = tidy(t.name), raw = tidy(t.cuisine) || "Sense etiqueta";
-    const type = { N: "node", W: "way", R: "relation" }[e?.properties?.osm_type];
-    return { n: n || "❌Sense nom❌", isU: !n, p: valid(p) ? p : null, u: href(type || "", e?.properties?.osm_id ?? ""), t, raw, vals: raw == "Sense etiqueta" ? [] : raw.split(";").map(tidy).filter(Boolean) };
-  }).filter((o) => valid(o.p)).sort((a, b) => a.isU == b.isU ? a.n.localeCompare(b.n) : a.isU ? -1 : 1).map((o, i) => ({ ...o, i })) : [];
   const fitAll = (a) => {
     const b = a.reduce((b, o) => b.extend(o.p), new maplibregl.LngLatBounds());
     if (!b.isEmpty()) map.fitBounds(b, { padding: 60, maxZoom: 18, duration: 450 });
@@ -151,6 +127,36 @@ document.addEventListener("DOMContentLoaded", () => {
     setPoints(a);
     fitAll(a);
   };
+  const render = (data) => {
+    if (!validSnapshot(data)) throw new Error("Dades publicades invàlides");
+    pop.remove();
+    reset();
+    clr();
+    filter = "";
+    blur();
+    Object.values(markers).forEach((m) => m.remove());
+    Object.keys(markers).forEach((i) => delete markers[i]);
+    screen = {};
+    all = data.all;
+    $("list-title").textContent = `${all.length} establiments amb cuina catalana`;
+    el.replaceChildren(...all.map((o) => {
+      const li = ce("li", o.isU ? "undefined-name" : "", o.n);
+      li.dataset.idx = o.i;
+      return li;
+    }));
+    list(ml, data.multi);
+    list(ul, data.unique);
+    er.replaceChildren(...(data.errors.length ? data.errors.map(({ n, c, u }) => {
+      const li = ce("li", "error-item", `${n} (${c})`);
+      li.dataset.url = u;
+      return li;
+    }) : [ce("li", "no-click", "Sense errors. La cuina ben feta no té fronteres 🥳")]));
+    setPoints(all);
+    fitAll(all);
+    const time = new Date(data.updatedAt);
+    age.textContent = `Dades: ${time.toLocaleString("ca-ES", { dateStyle: "short", timeStyle: "short" })}${Date.now() - time.getTime() > 86400000 ? " · >24 h" : ""}`;
+    age.title = `Consulta: ${time.toISOString()}`;
+  };
   el.onclick = (e) => {
     const li = e.target.closest("li[data-idx]");
     if (!li || !el.contains(li)) return;
@@ -177,58 +183,85 @@ document.addEventListener("DOMContentLoaded", () => {
     window.open(li.dataset.url, "_blank", "noopener");
   };
   pop.on("close", closePopup);
+  const COOLDOWN_KEY = "cuinacatalana:postpass:manual";
+  let lastRefresh = 0, refreshReady = false, refreshBusy = false, cooldownTimer = null;
+  try { lastRefresh = Number(localStorage.getItem(COOLDOWN_KEY)) || 0; } catch {}
+  const syncRefresh = () => {
+    const remaining = cooldownSeconds(lastRefresh);
+    refresh.disabled = !refreshReady || refreshBusy || remaining > 0;
+    refresh.textContent = refreshBusy ? "Actualitzant…" : remaining ? `↻ ${remaining}s` : "↻ Actualitza";
+    refresh.title = remaining ? `Nova consulta disponible en ${remaining} segons` : "Consultar ara mateix les dades d'OpenStreetMap via Postpass";
+    if (remaining && !cooldownTimer) cooldownTimer = setInterval(syncRefresh, 1000);
+    if (!remaining && cooldownTimer) { clearInterval(cooldownTimer); cooldownTimer = null; }
+  };
+  window.addEventListener("storage", (e) => {
+    if (e.key !== COOLDOWN_KEY) return;
+    lastRefresh = Number(e.newValue) || 0;
+    syncRefresh();
+  });
+  refresh.onclick = async () => {
+    syncRefresh();
+    if (refresh.disabled) return;
+    refreshBusy = true;
+    lastRefresh = Date.now();
+    try { localStorage.setItem(COOLDOWN_KEY, String(lastRefresh)); } catch {}
+    syncRefresh();
+    const before = age.textContent;
+    age.textContent = "Consultant Postpass…";
+    try {
+      render(prepareSnapshot(await fetchPostpass()));
+    } catch (e) {
+      console.error(e);
+      age.textContent = before ? `Error d'actualització · ${before}` : "Error d'actualització";
+      age.title = e?.message || String(e);
+    } finally {
+      refreshBusy = false;
+      syncRefresh();
+    }
+  };
   (async () => {
     show(1);
-    msg("Iniciant mapa…");
-    await new Promise((resolve) => map.once("load", resolve));
-    catalanize();
-    addPois();
-    map.on("idle", updateMarkers);
-    map.on("click", "clusters", async (e) => {
-      const f = e.features?.[0], p = f?.geometry?.coordinates, id = f?.properties?.cluster_id;
-      if (!valid(p) || id == null) return;
-      const z = await map.getSource("pois")?.getClusterExpansionZoom(id);
-      if (num(z)) map.easeTo({ center: p, zoom: z, duration: 450 });
+    msg("Iniciant mapa i descarregant dades…");
+    const snapshotRequest = fetch("./snapshot.json", { cache: "no-cache" }).then(async (r) => {
+      if (!r.ok) throw new Error(`JSON HTTP ${r.status}`);
+      const data = await r.json();
+      if (!validSnapshot(data)) throw new Error("Dades publicades invàlides");
+      return data;
     });
-    map.on("mouseenter", "clusters", () => (map.getCanvas().style.cursor = "pointer"));
-    map.on("mouseleave", "clusters", () => (map.getCanvas().style.cursor = ""));
-    map.on("click", (e) => {
-      if (map.queryRenderedFeatures(e.point, { layers: ["clusters"] }).length) return;
-      pop.remove();
-      closePopup();
-    });
-    msg("Descarregant…");
-    const r = await json(), good = [], bad = [];
-    r.features.forEach((e) => (isCatalan(e) ? good : bad).push(e));
-    all = proc(good);
-    $("list-title").textContent = `${all.length} establiments amb cuina catalana`;
-    el.replaceChildren(...all.map((o) => {
-      const li = ce("li", o.isU ? "undefined-name" : "", o.n);
-      li.dataset.idx = o.i;
-      return li;
+    const mapReady = new Promise((resolve) => map.once("load", () => {
+      catalanize();
+      addPois();
+      map.on("idle", updateMarkers);
+      map.on("click", "clusters", async (e) => {
+        const f = e.features?.[0], p = f?.geometry?.coordinates, id = f?.properties?.cluster_id;
+        if (!valid(p) || id == null) return;
+        const z = await map.getSource("pois")?.getClusterExpansionZoom(id);
+        if (num(z)) map.easeTo({ center: p, zoom: z, duration: 450 });
+      });
+      map.on("mouseenter", "clusters", () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", "clusters", () => (map.getCanvas().style.cursor = ""));
+      map.on("click", (e) => {
+        if (map.queryRenderedFeatures(e.point, { layers: ["clusters"] }).length) return;
+        pop.remove();
+        closePopup();
+      });
+      resolve();
     }));
-    setPoints(all);
-    fitAll(all);
-    msg("Comptant valors…");
-    const cnt = new Map(), ucnt = new Map();
-    all.forEach(({ raw, vals }) => {
-      cnt.set(raw, (cnt.get(raw) || 0) + 1);
-      vals.forEach((v) => ucnt.set(v, (ucnt.get(v) || 0) + 1));
-    });
-    list(ml, rows(cnt));
-    list(ul, rows(ucnt));
-    msg("Comprovant possibles errors…");
-    const errs = proc(bad).map((o) => ({ ...o, c: o.raw }));
-    er.replaceChildren(...(errs.length ? errs.map(({ n, c, u }) => {
-      const li = ce("li", "error-item", `${n} (${c})`);
-      li.dataset.url = u;
-      return li;
-    }) : [ce("li", "no-click", "Sense errors. La cuina ben feta no té fronteres 🥳")]));
+    const [snapshotResult, mapResult] = await Promise.allSettled([snapshotRequest, mapReady]);
+    if (mapResult.status === "rejected") throw mapResult.reason;
+    if (snapshotResult.status === "rejected") throw snapshotResult.reason;
+    render(snapshotResult.value);
+    refreshReady = true;
+    syncRefresh();
     show(0);
   })().catch((e) => {
     console.error(e);
     msg("Error");
+    age.textContent = "No s'han pogut carregar les dades";
+    age.title = e?.message || String(e);
     er.appendChild(ce("li", "error-item", "Error: " + (e?.message || String(e))));
+    refreshReady = !!map.getSource("pois");
+    syncRefresh();
     show(0);
   });
   const guide = document.querySelector(".guide"), summary = guide?.querySelector("summary");
