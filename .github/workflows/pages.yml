@@ -1,0 +1,36 @@
+name: Actualitzar dades i publicar Pages
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/configure-pages@v6
+      - name: Comprovar processament
+        run: node --test data-core.test.mjs
+      - name: Generar dades i web
+        run: |
+          mkdir -p site
+          cp index.html script.js style.css data-core.mjs MapMarker.png favicon.ico logo.png site/
+          node build-data.mjs
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5
