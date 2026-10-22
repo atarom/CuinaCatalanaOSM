@@ -1,5 +1,5 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl.mjs";
-import { cooldownSeconds, fetchPostpass, prepareSnapshot, validSnapshot } from "./data-core.mjs";
+import { cooldownSeconds, fetchPostpass, prepareSnapshot, validHistory, validSnapshot } from "./data-core.mjs";
 document.addEventListener("DOMContentLoaded", () => {
   const $ = document.getElementById.bind(document);
   const ce = (t, c, x) => Object.assign(document.createElement(t), { className: c || "", textContent: x ?? "" });
@@ -264,12 +264,60 @@ document.addEventListener("DOMContentLoaded", () => {
     syncRefresh();
     show(0);
   });
-  const guide = document.querySelector(".guide"), summary = guide?.querySelector("summary");
-  document.addEventListener("click", (e) => guide && !guide.contains(e.target) && (guide.open = false));
-  summary?.addEventListener("click", (e) => {
+  const tools = [...document.querySelectorAll(".guide")];
+  const historyPanel = document.querySelector(".guide.history"), historyContent = $("history-content");
+  let historyLoaded = false, historyLoading = false;
+  const displayHistory = (data) => {
+    historyContent.replaceChildren();
+    if (!data.events.length) {
+      historyContent.textContent = "Encara no hi ha altes ni baixes registrades.";
+      return;
+    }
+    let date = "", listElement;
+    for (const event of data.events) {
+      const day = new Date(event.at).toLocaleDateString("ca-ES", { year: "numeric", month: "long", day: "numeric" });
+      if (day !== date) {
+        date = day;
+        historyContent.appendChild(ce("h4", "history-day", day));
+        listElement = ce("ul", "history-list");
+        historyContent.appendChild(listElement);
+      }
+      const li = ce("li", "history-item"), mark = ce("span", `history-mark ${event.action}`, event.action === "added" ? "+" : "−");
+      const link = ce("a", "", event.name);
+      link.href = event.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      const detail = ce("small", "", `${event.url.split("/").slice(-2).join("/")} · ${event.cuisine}`);
+      li.append(mark, link, detail);
+      listElement.appendChild(li);
+    }
+  };
+  const loadHistory = async () => {
+    if (historyLoaded || historyLoading) return;
+    historyLoading = true;
+    historyContent.textContent = "Carregant historial…";
+    try {
+      const response = await fetch("./history.json", { cache: "no-cache" });
+      if (!response.ok) throw new Error(`Historial HTTP ${response.status}`);
+      const data = await response.json();
+      if (!validHistory(data)) throw new Error("Historial invàlid");
+      displayHistory(data);
+      historyLoaded = true;
+    } catch (e) {
+      console.error(e);
+      historyContent.textContent = "No s'ha pogut carregar l'historial.";
+    } finally {
+      historyLoading = false;
+    }
+  };
+  tools.forEach((panel) => panel.querySelector("summary")?.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    guide.open = !guide.open;
-  });
-  document.addEventListener("keydown", (e) => e.key == "Escape" && (guide.open = false));
+    const opening = !panel.open;
+    tools.forEach((item) => (item.open = false));
+    panel.open = opening;
+    if (opening && panel === historyPanel) loadHistory();
+  }));
+  document.addEventListener("click", (e) => tools.forEach((panel) => !panel.contains(e.target) && (panel.open = false)));
+  document.addEventListener("keydown", (e) => e.key === "Escape" && tools.forEach((panel) => (panel.open = false)));
 });

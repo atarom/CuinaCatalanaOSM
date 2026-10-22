@@ -36,3 +36,26 @@ export const cooldownSeconds = (last, now = Date.now()) => Number.isFinite(last)
 const canonical = (value) => JSON.stringify(value, (_, v) => v && !Array.isArray(v) && typeof v === "object" ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v);
 const comparable = (d) => ({ all: d.all.map(({ i, ...o }) => o).sort((a, b) => a.u.localeCompare(b.u)), multi: [...d.multi].sort((a, b) => a.v.localeCompare(b.v)), unique: [...d.unique].sort((a, b) => a.v.localeCompare(b.v)), errors: [...d.errors].sort((a, b) => a.u.localeCompare(b.u)) });
 export const sameSnapshot = (a, b) => validSnapshot(a) && validSnapshot(b) && canonical(comparable(a)) === canonical(comparable(b));
+export const validHistory = (d) => d?.version === 1 && Number.isFinite(Date.parse(d.baselineAt)) && Array.isArray(d.events) && d.events.every((e) => (e.action === "added" || e.action === "removed") && Number.isFinite(Date.parse(e.at)) && Number.isFinite(Date.parse(e.sourceAt)) && /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/\d+$/.test(e.url) && typeof e.name === "string" && typeof e.cuisine === "string" && valid(e.p));
+export const updateHistory = (previous, current, existing, at = new Date().toISOString()) => {
+  if (!validSnapshot(current) || previous && !validSnapshot(previous)) throw new Error("Dades invàlides per a l'historial");
+  if (existing !== null && !validHistory(existing)) throw new Error("Historial anterior invàlid");
+  const history = existing ? { ...existing, events: [...existing.events] } : { version: 1, baselineAt: previous?.updatedAt || current.updatedAt, events: [] };
+  const oldItems = new Map((previous?.all || []).map((o) => [o.u, o]));
+  const newItems = new Map(current.all.map((o) => [o.u, o]));
+  const recorded = new Set(history.events.map((e) => `${e.sourceAt}|${e.action}|${e.url}`));
+  const changes = [];
+  const add = (action, o) => {
+    const key = `${previous.updatedAt}|${action}|${o.u}`;
+    if (recorded.has(key)) return;
+    changes.push({ at, sourceAt: previous.updatedAt, action, url: o.u, name: o.n, cuisine: o.raw, p: o.p });
+  };
+  if (previous) {
+    for (const [url, item] of newItems) if (!oldItems.has(url)) add("added", item);
+    for (const [url, item] of oldItems) if (!newItems.has(url)) add("removed", item);
+  }
+  changes.sort((a, b) => a.action.localeCompare(b.action) || a.url.localeCompare(b.url));
+  history.events.unshift(...changes);
+  if (!validHistory(history)) throw new Error("Historial nou invàlid");
+  return { history, changed: !existing || changes.length > 0, changes };
+};

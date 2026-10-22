@@ -1,8 +1,8 @@
-import { appendFile, mkdir, writeFile } from "node:fs/promises";
-import { fetchPostpass, prepareSnapshot, sameSnapshot, validSnapshot } from "./data-core.mjs";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { fetchPostpass, prepareSnapshot, sameSnapshot, updateHistory, validHistory, validSnapshot } from "./data-core.mjs";
 const snapshot = prepareSnapshot(await fetchPostpass());
 if (!validSnapshot(snapshot)) throw new Error("El JSON generat no és vàlid");
-let previous = null;
+let previous = null, history = null;
 try {
   const url = "https://atarom.github.io/CuinaCatalanaOSM/snapshot.json?checked=" + Date.now();
   const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
@@ -13,13 +13,24 @@ try {
 } catch (e) {
   console.warn("No s'ha pogut comprovar la publicació anterior:", e.message);
 }
+try {
+  history = JSON.parse(await readFile("history.json", "utf8"));
+  if (!validHistory(history)) throw new Error("Historial anterior invàlid");
+} catch (e) {
+  if (e.code !== "ENOENT") throw e;
+}
+if (!previous && history) throw new Error("No es pot comparar sense les dades publicades anteriors");
 const unchanged = previous !== null && sameSnapshot(previous, snapshot);
-const publish = process.env.GITHUB_EVENT_NAME !== "schedule" || !unchanged;
+const { history: nextHistory, changed: historyChanged, changes } = updateHistory(previous, snapshot, history);
+if (historyChanged) await writeFile("history.json", JSON.stringify(nextHistory));
+const publish = process.env.GITHUB_EVENT_NAME !== "schedule" || !unchanged || historyChanged;
 if (publish) {
   await mkdir("site", { recursive: true });
   await writeFile("site/snapshot.json", JSON.stringify(unchanged ? previous : snapshot));
+  await writeFile("site/history.json", JSON.stringify(nextHistory));
 }
 if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `publish=${publish}
 `);
+console.log(`Historial: ${changes.filter((e) => e.action === "added").length} altes, ${changes.filter((e) => e.action === "removed").length} baixes`);
 console.log(unchanged ? "Sense canvis en els establiments ni les etiquetes" : `Dades noves: ${snapshot.all.length} establiments, ${snapshot.errors.length} errors`);
 console.log(publish ? "Cal publicar GitHub Pages" : "Es conserva la publicació existent");
