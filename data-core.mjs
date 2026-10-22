@@ -33,3 +33,6 @@ export const fetchPostpass = async () => {
   return d;
 };
 export const cooldownSeconds = (last, now = Date.now()) => Number.isFinite(last) && last > 0 && last <= now ? Math.max(0, Math.ceil((last + 180000 - now) / 1000)) : 0;
+const canonical = (value) => JSON.stringify(value, (_, v) => v && !Array.isArray(v) && typeof v === "object" ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v);
+const comparable = (d) => ({ all: d.all.map(({ i, ...o }) => o).sort((a, b) => a.u.localeCompare(b.u)), multi: [...d.multi].sort((a, b) => a.v.localeCompare(b.v)), unique: [...d.unique].sort((a, b) => a.v.localeCompare(b.v)), errors: [...d.errors].sort((a, b) => a.u.localeCompare(b.u)) });
+export const sameSnapshot = (a, b) => validSnapshot(a) && validSnapshot(b) && canonical(comparable(a)) === canonical(comparable(b));

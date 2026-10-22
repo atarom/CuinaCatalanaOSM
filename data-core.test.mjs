@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cooldownSeconds, fetchPostpass, prepareSnapshot, validSnapshot } from "./data-core.mjs";
+import { cooldownSeconds, fetchPostpass, prepareSnapshot, sameSnapshot, validSnapshot } from "./data-core.mjs";
 const feature = (id, name, cuisine, type = "N") => ({ type: "Feature", geometry: { type: "Point", coordinates: [2.1 + id / 100, 41.3] }, properties: { osm_type: type, osm_id: id, tags: { name, cuisine, amenity: "restaurant" } } });
 const response = { type: "FeatureCollection", features: [feature(1, "", "catalan;mediterranean"), feature(2, "Restaurant", "catalan"), feature(3, "Error", "catalana"), feature(4, "Bar", "catalan;mediterranean", "W")] };
 test("manté establiments, comptadors, etiquetes i possibles errors", () => {
@@ -42,4 +42,24 @@ test("respecta els 180 segons entre consultes manuals", () => {
   assert.equal(cooldownSeconds(1000, 181000), 0);
   assert.equal(cooldownSeconds(0, 1000), 0);
   assert.equal(cooldownSeconds(2000, 1000), 0);
+});
+test("no considera canvis la data, l'ordre dels tags o dels establiments", () => {
+  const before = prepareSnapshot(response, "2026-10-21T04:17:00Z");
+  const shuffled = { ...response, features: [...response.features].reverse().map((f) => ({ ...f, properties: { ...f.properties, tags: { cuisine: f.properties.tags.cuisine, amenity: "restaurant", name: f.properties.tags.name } } })) };
+  const after = prepareSnapshot(shuffled, "2026-10-22T04:17:00Z");
+  assert.equal(sameSnapshot(before, after), true);
+  after.all[0].t.amenity = "bar";
+  assert.equal(sameSnapshot(before, after), false);
+});
+test("detecta canvis en els errors, els comptadors i els punts", () => {
+  const before = prepareSnapshot(response);
+  const after = structuredClone(before);
+  after.errors[0].c = "catalana;other";
+  assert.equal(sameSnapshot(before, after), false);
+  after.errors[0].c = before.errors[0].c;
+  after.multi[0].c++;
+  assert.equal(sameSnapshot(before, after), false);
+  after.multi[0].c--;
+  after.all[0].p[0] += 0.01;
+  assert.equal(sameSnapshot(before, after), false);
 });
