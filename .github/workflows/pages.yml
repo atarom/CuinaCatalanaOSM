@@ -6,7 +6,7 @@ on:
     - cron: "17 4 * * *"
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
@@ -21,16 +21,32 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/configure-pages@v6
       - name: Comprovar processament
         run: node --test data-core.test.mjs
-      - name: Generar dades i web
+      - name: Generar dades i comparar
+        id: data
+        run: node build-data.mjs
+      - name: Registrar activitat periòdica
+        if: github.event_name == 'schedule'
         run: |
-          mkdir -p site
-          cp index.html script.js style.css data-core.mjs MapMarker.png favicon.ico logo.png site/
-          node build-data.mjs
+          age=$(( $(date -u +%s) - $(git log -1 --format=%ct) ))
+          if [ "$age" -ge 3888000 ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git -c commit.gpgsign=false commit --allow-empty -m 'chore: comprovació periòdica de dades'
+            if ! git push origin HEAD:main; then
+              echo '::warning::No s’ha pogut registrar activitat a main'
+            fi
+          fi
+      - uses: actions/configure-pages@v6
+        if: steps.data.outputs.publish == 'true'
+      - name: Preparar web
+        if: steps.data.outputs.publish == 'true'
+        run: cp index.html script.js style.css data-core.mjs MapMarker.png favicon.ico logo.png site/
       - uses: actions/upload-pages-artifact@v5
+        if: steps.data.outputs.publish == 'true'
         with:
           path: site
       - id: deployment
+        if: steps.data.outputs.publish == 'true'
         uses: actions/deploy-pages@v5
