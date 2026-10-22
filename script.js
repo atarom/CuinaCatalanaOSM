@@ -1,4 +1,4 @@
-import * as maplibregl from "https://unpkg.com/maplibre-gl@6.11.1/dist/maplibre-gl.mjs";
+import * as maplibregl from "https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl.mjs";
 import { cooldownSeconds, fetchPostpass, prepareSnapshot, validSnapshot } from "./data-core.mjs";
 document.addEventListener("DOMContentLoaded", () => {
   const $ = document.getElementById.bind(document);
