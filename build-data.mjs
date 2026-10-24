@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { fetchPostpass, prepareSnapshot, sameSnapshot, updateHistory, validHistory, validSnapshot } from "./data-core.mjs";
 const published = async (file, valid) => {
   const response = await fetch(`https://atarom.github.io/CuinaCatalanaOSM/${file}?checked=${Date.now()}`, { cache: "no-store", signal: AbortSignal.timeout(15000) });
@@ -12,7 +12,6 @@ if (process.env.GITHUB_EVENT_NAME === "push") {
   await mkdir("site", { recursive: true });
   await writeFile("site/snapshot.json", JSON.stringify(snapshot));
   await writeFile("site/history.json", JSON.stringify(history));
-  if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, "publish=true\n");
   console.log("Desplegant dades publicades sense consultar Postpass");
 } else {
   const snapshot = prepareSnapshot(await fetchPostpass());
@@ -38,14 +37,10 @@ if (process.env.GITHUB_EVENT_NAME === "push") {
   const unchanged = previous !== null && sameSnapshot(previous, snapshot);
   const { history: nextHistory, changed: historyChanged, changes } = updateHistory(previous, snapshot, history);
   if (historyChanged) await writeFile("history.json", JSON.stringify(nextHistory));
-  const publish = process.env.GITHUB_EVENT_NAME !== "schedule" || !unchanged || historyChanged;
-  if (publish) {
-    await mkdir("site", { recursive: true });
-    await writeFile("site/snapshot.json", JSON.stringify(unchanged ? previous : snapshot));
-    await writeFile("site/history.json", JSON.stringify(nextHistory));
-  }
-  if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `publish=${publish}\n`);
+  await mkdir("site", { recursive: true });
+  await writeFile("site/snapshot.json", JSON.stringify(snapshot));
+  await writeFile("site/history.json", JSON.stringify(nextHistory));
   console.log(`Historial: ${changes.filter((e) => e.action === "added").length} altes, ${changes.filter((e) => e.action === "removed").length} baixes`);
   console.log(unchanged ? "Sense canvis en els establiments ni les etiquetes" : `Dades noves: ${snapshot.all.length} establiments, ${snapshot.errors.length} errors`);
-  console.log(publish ? "Cal publicar GitHub Pages" : "Es conserva la publicació existent");
+  console.log("Dades comprovades: es publicarà la data de la consulta");
 }

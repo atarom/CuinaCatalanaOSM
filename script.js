@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setPoints(all);
     fitAll(all);
     const time = new Date(data.updatedAt);
-    age.textContent = `Dades actualitzades: ${time.toLocaleString("ca-ES", { dateStyle: "short", timeStyle: "short" })}`;
+    age.textContent = `Dades comprovades: ${time.toLocaleString("ca-ES", { dateStyle: "short", timeStyle: "short" })}`;
     age.title = `Consulta: ${time.toISOString()}`;
   };
   el.onclick = (e) => {
