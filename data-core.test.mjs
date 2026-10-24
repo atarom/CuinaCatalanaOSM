@@ -28,12 +28,56 @@ test("consulta Postpass sense caché i gestiona errors", async () => {
     assert.deepEqual(await fetchPostpass(), response);
     assert.ok(url.includes("postpass.geofabrik.de/api/interpreter?data="));
     assert.equal(options.cache, "no-store");
+    assert.ok(options.signal instanceof AbortSignal);
     globalThis.fetch = async () => ({ ok: false, status: 503, statusText: "Unavailable" });
-    await assert.rejects(fetchPostpass(), /Postpass HTTP 503/);
+    await assert.rejects(fetchPostpass([]), /Postpass HTTP 503/);
     globalThis.fetch = async () => ({ ok: true, json: async () => ({ type: "FeatureCollection", features: [] }) });
-    await assert.rejects(fetchPostpass(), /buida/);
+    await assert.rejects(fetchPostpass([]), /buida/);
   } finally {
     globalThis.fetch = previousFetch;
+  }
+});
+test("assigna un màxim de vuit minuts a la consulta Postpass", async () => {
+  const originalFetch = globalThis.fetch, originalTimeout = AbortSignal.timeout;
+  try {
+    let requestedTimeout;
+    AbortSignal.timeout = (ms) => { requestedTimeout = ms; return originalTimeout(ms); };
+    globalThis.fetch = async () => ({ ok: true, json: async () => response });
+    await fetchPostpass();
+    assert.equal(requestedTimeout, 480000);
+  } finally {
+    globalThis.fetch = originalFetch;
+    AbortSignal.timeout = originalTimeout;
+  }
+});
+test("reintenta Postpass en errors temporals i s'atura en arribar al límit", async () => {
+  const originalFetch = globalThis.fetch, originalWarn = console.warn;
+  try {
+    let attempts = 0;
+    console.warn = () => {};
+    globalThis.fetch = async () => {
+      attempts++;
+      if (attempts < 3) return { ok: false, status: 503, statusText: "Unavailable" };
+      return { ok: true, json: async () => response };
+    };
+    assert.deepEqual(await fetchPostpass([0, 0], 1000), response);
+    assert.equal(attempts, 3);
+    attempts = 0;
+    globalThis.fetch = async () => { attempts++; throw new Error("Connexió interrompuda"); };
+    await assert.rejects(fetchPostpass([0, 0], 1000), /3 intents: Connexió interrompuda/);
+    assert.equal(attempts, 3);
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalWarn;
+  }
+});
+test("cancel·la una consulta Postpass bloquejada quan supera el temps límit", async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = (_, { signal }) => new Promise((_, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true }));
+    await Promise.all([assert.rejects(fetchPostpass([], 15), /Postpass ha fallat després de 1 intents/), new Promise((resolve) => setTimeout(resolve, 30))]);
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });
 test("publica només les validacions necessàries al navegador", () => {

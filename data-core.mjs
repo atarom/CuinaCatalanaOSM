@@ -25,12 +25,20 @@ export const prepareSnapshot = (d, updatedAt = new Date().toISOString()) => {
   const errors = process(bad).map(({ n, raw, u }) => ({ n, c: raw, u }));
   return { version: 1, updatedAt, all, multi: rows(cnt), unique: rows(ucnt), errors };
 };
-export const fetchPostpass = async () => {
-  const r = await fetch(POSTPASS_URL + "?data=" + encodeURIComponent(POSTPASS_QUERY), { cache: "no-store" });
-  if (!r.ok) throw new Error(`Postpass HTTP ${r.status} ${r.statusText}`);
-  const d = await r.json();
-  if (!validResponse(d)) throw new Error(d?.error || "Resposta invàlida o buida de Postpass");
-  return d;
+export const fetchPostpass = async (delays = [300000, 900000], timeoutMs = 480000) => {
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      const r = await fetch(POSTPASS_URL + "?data=" + encodeURIComponent(POSTPASS_QUERY), { cache: "no-store", signal: AbortSignal.timeout(timeoutMs) });
+      if (!r.ok) throw new Error(`Postpass HTTP ${r.status} ${r.statusText}`);
+      const d = await r.json();
+      if (!validResponse(d)) throw new Error(d?.error || "Resposta invàlida o buida de Postpass");
+      return d;
+    } catch (e) {
+      if (attempt === delays.length) throw new Error(`Postpass ha fallat després de ${attempt + 1} intents: ${e.message}`, { cause: e });
+      console.warn(`Postpass: intent ${attempt + 1} fallit (${e.message}); nou intent en ${delays[attempt] / 60000} minuts`);
+      await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+    }
+  }
 };
 const canonical = (value) => JSON.stringify(value, (_, v) => v && !Array.isArray(v) && typeof v === "object" ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v);
 const comparable = (d) => ({ all: d.all.map(({ i, ...o }) => o).sort((a, b) => a.u.localeCompare(b.u)), multi: [...d.multi].sort((a, b) => a.v.localeCompare(b.v)), unique: [...d.unique].sort((a, b) => a.v.localeCompare(b.v)), errors: [...d.errors].sort((a, b) => a.u.localeCompare(b.u)) });
