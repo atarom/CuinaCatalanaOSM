@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const valid = (p) => Array.isArray(p) && p.length > 1 && num(p[0]) && num(p[1]);
   const IMG = "./MapMarker.png";
   const map = new maplibregl.Map({ container: "map", style: "https://tiles.openfreemap.org/styles/bright", center: [1.6, 41.6], zoom: 8, minZoom: 0, maxZoom: 18, renderWorldCopies: false, attributionControl: false });
-  const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "520px", offset: 38 });
+  const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "520px", offset: 90 });
   const markers = {};
   let screen = {}, all = [], filter = "", selected = null;
   map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-left");
@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (f.properties?.cluster) return;
       const idx = Number(f.properties?.idx), o = all[idx];
       if (!Number.isInteger(idx) || !o || !valid(o.p) || next[idx]) return;
-      const marker = markers[idx] ||= new maplibregl.Marker({ element: poi(o), anchor: "center" }).setLngLat(o.p);
+      const marker = markers[idx] ||= new maplibregl.Marker({ element: poi(o), anchor: "bottom" }).setLngLat(o.p);
       marker.getElement().classList.toggle("active", idx === selected);
       next[idx] = marker;
       if (!screen[idx]) marker.addTo(map);
