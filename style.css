@@ -516,39 +516,14 @@ body {
   display: flex;
   align-items: center;
   min-height: 38px;
-  gap: 6px;
   padding: 0 66px 0 2px;
   border-bottom: 1px solid #ffffff22;
   color: var(--fg);
   font: 600 .72rem/1.25 Arial,system-ui,sans-serif;
 }
 .data-status span {
-  flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
-}
-.data-status button {
-  flex: none;
-  min-height: 34px;
-  padding: 4px 7px;
-  border: 1px solid #78abc47f;
-  border-radius: 4px;
-  background: #315f7633;
-  color: var(--fg);
-  font: 700 .72rem Arial,system-ui,sans-serif;
-  cursor: pointer;
-}
-.data-status button:hover {
-  border-color: var(--ac);
-  background: #315f7666;
-}
-.data-status button:focus-visible {
-  outline: 2px solid var(--ac);
-  outline-offset: 2px;
-}
-.data-status button:disabled {
-  opacity: .6;
-  cursor: progress;
 }
 .guide.history {
   right: 40px;

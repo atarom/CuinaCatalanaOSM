@@ -1,5 +1,5 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl.mjs";
-import { cooldownSeconds, fetchPostpass, prepareSnapshot, validHistory, validSnapshot } from "./data-core.mjs";
+import { validHistory, validSnapshot } from "./data-client.mjs";
 document.addEventListener("DOMContentLoaded", () => {
   const mobileSections = [...document.querySelectorAll(".mobile-section")];
   const mobileTabs = [...document.querySelectorAll(".mobile-tab")];
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   mobileLayout.addEventListener("change", syncMobileSections);
   const $ = document.getElementById.bind(document);
   const ce = (t, c, x) => Object.assign(document.createElement(t), { className: c || "", textContent: x ?? "" });
-  const ld = $("loading"), er = $("error-list"), el = $("establishment-list"), ml = $("shared-left-list"), ul = $("shared-right-list"), refresh = $("refresh-data"), age = $("data-age");
+  const ld = $("loading"), er = $("error-list"), el = $("establishment-list"), ml = $("shared-left-list"), ul = $("shared-right-list"), age = $("data-age");
   const show = (v) => (ld.style.display = v ? "flex" : "none");
   const msg = (s) => (ld.firstElementChild.textContent = s);
   const ent = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
@@ -202,42 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.open(li.dataset.url, "_blank", "noopener");
   };
   pop.on("close", closePopup);
-  const COOLDOWN_KEY = "cuinacatalana:postpass:manual";
-  let lastRefresh = 0, refreshReady = false, refreshBusy = false, cooldownTimer = null;
-  try { lastRefresh = Number(localStorage.getItem(COOLDOWN_KEY)) || 0; } catch {}
-  const syncRefresh = () => {
-    const remaining = cooldownSeconds(lastRefresh);
-    refresh.disabled = !refreshReady || refreshBusy || remaining > 0;
-    refresh.textContent = refreshBusy ? "Actualitzant…" : remaining ? `↻ ${remaining}s` : "↻ Actualitza";
-    refresh.title = remaining ? `Nova consulta disponible en ${remaining} segons` : "Consultar ara mateix les dades d'OpenStreetMap via Postpass";
-    if (remaining && !cooldownTimer) cooldownTimer = setInterval(syncRefresh, 1000);
-    if (!remaining && cooldownTimer) { clearInterval(cooldownTimer); cooldownTimer = null; }
-  };
-  window.addEventListener("storage", (e) => {
-    if (e.key !== COOLDOWN_KEY) return;
-    lastRefresh = Number(e.newValue) || 0;
-    syncRefresh();
-  });
-  refresh.onclick = async () => {
-    syncRefresh();
-    if (refresh.disabled) return;
-    refreshBusy = true;
-    lastRefresh = Date.now();
-    try { localStorage.setItem(COOLDOWN_KEY, String(lastRefresh)); } catch {}
-    syncRefresh();
-    const before = age.textContent;
-    age.textContent = "Consultant Postpass…";
-    try {
-      render(prepareSnapshot(await fetchPostpass()));
-    } catch (e) {
-      console.error(e);
-      age.textContent = before ? `Error d'actualització · ${before}` : "Error d'actualització";
-      age.title = e?.message || String(e);
-    } finally {
-      refreshBusy = false;
-      syncRefresh();
-    }
-  };
   (async () => {
     show(1);
     msg("Iniciant mapa i descarregant dades…");
@@ -270,8 +234,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (mapResult.status === "rejected") throw mapResult.reason;
     if (snapshotResult.status === "rejected") throw snapshotResult.reason;
     render(snapshotResult.value);
-    refreshReady = true;
-    syncRefresh();
     show(0);
   })().catch((e) => {
     console.error(e);
@@ -279,8 +241,6 @@ document.addEventListener("DOMContentLoaded", () => {
     age.textContent = "No s'han pogut carregar les dades";
     age.title = e?.message || String(e);
     er.appendChild(ce("li", "error-item", "Error: " + (e?.message || String(e))));
-    refreshReady = !!map.getSource("pois");
-    syncRefresh();
     show(0);
   });
   const tools = [...document.querySelectorAll(".guide")];

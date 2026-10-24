@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cooldownSeconds, fetchPostpass, prepareSnapshot, sameSnapshot, updateHistory, validHistory, validSnapshot } from "./data-core.mjs";
+import { fetchPostpass, prepareSnapshot, sameSnapshot, updateHistory, validHistory, validSnapshot } from "./data-core.mjs";
+import * as client from "./data-client.mjs";
 const feature = (id, name, cuisine, type = "N") => ({ type: "Feature", geometry: { type: "Point", coordinates: [2.1 + id / 100, 41.3] }, properties: { osm_type: type, osm_id: id, tags: { name, cuisine, amenity: "restaurant" } } });
 const response = { type: "FeatureCollection", features: [feature(1, "", "catalan;mediterranean"), feature(2, "Restaurant", "catalan"), feature(3, "Error", "catalana"), feature(4, "Bar", "catalan;mediterranean", "W")] };
 test("manté establiments, comptadors, etiquetes i possibles errors", () => {
@@ -35,13 +36,10 @@ test("consulta Postpass sense caché i gestiona errors", async () => {
     globalThis.fetch = previousFetch;
   }
 });
-test("respecta els 180 segons entre consultes manuals", () => {
-  assert.equal(cooldownSeconds(1000, 1000), 180);
-  assert.equal(cooldownSeconds(1000, 2000), 179);
-  assert.equal(cooldownSeconds(1000, 180999), 1);
-  assert.equal(cooldownSeconds(1000, 181000), 0);
-  assert.equal(cooldownSeconds(0, 1000), 0);
-  assert.equal(cooldownSeconds(2000, 1000), 0);
+test("publica només les validacions necessàries al navegador", () => {
+  assert.deepEqual(Object.keys(client).sort(), ["validHistory", "validPoint", "validSnapshot"]);
+  assert.equal(client.validPoint([2.1, 41.3]), true);
+  assert.equal(client.validPoint([null, 41.3]), false);
 });
 test("no considera canvis la data, l'ordre dels tags o dels establiments", () => {
   const before = prepareSnapshot(response, "2026-10-21T04:17:00Z");
