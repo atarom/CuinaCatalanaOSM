@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const showMobileSection = (id) => {
     activeMobileSection = id;
     mobileSections.forEach((section) => section.open = section.dataset.mobileSection === id);
-    mobileTabs.forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.mobileTarget === id)));
+    mobileTabs.forEach((tab) => tab.setAttribute("aria-pressed", String(tab.dataset.mobileTarget === id)));
   };
   const syncMobileSections = () => {
     if (mobileLayout.matches) showMobileSection(activeMobileSection);

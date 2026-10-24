@@ -817,7 +817,7 @@ body {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
-  .mobile-tab[aria-selected="true"] {
+  .mobile-tab[aria-pressed="true"] {
     background: linear-gradient(180deg,#f6d32d24,#315f7644);
     color: var(--ac);
     border-color: #f6d32d80;
@@ -888,5 +888,15 @@ body {
   }
   .popup-card {
     max-height: calc(58dvh - 44px);
+  }
+}
+@media (max-width: 390px) {
+  .mobile-tab {
+    padding: 0 2px;
+  }
+}
+@media (max-width: 360px) {
+  .mobile-tab {
+    font-size: .66rem;
   }
 }
