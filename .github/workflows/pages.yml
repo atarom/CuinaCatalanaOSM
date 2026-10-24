@@ -24,7 +24,6 @@ jobs:
       - name: Comprovar processament
         run: node --test data-core.test.mjs
       - name: Generar dades i comparar
-        id: data
         run: node build-data.mjs
       - name: Registrar historial i activitat periòdica
         run: |
@@ -44,14 +43,10 @@ jobs:
             fi
           fi
       - uses: actions/configure-pages@v6
-        if: steps.data.outputs.publish == 'true'
       - name: Preparar web
-        if: steps.data.outputs.publish == 'true'
         run: cp index.html script.js style.css data-client.mjs MapMarker.png favicon.ico site/
       - uses: actions/upload-pages-artifact@v5
-        if: steps.data.outputs.publish == 'true'
         with:
           path: site
       - id: deployment
-        if: steps.data.outputs.publish == 'true'
         uses: actions/deploy-pages@v5
