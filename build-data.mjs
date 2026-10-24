@@ -44,8 +44,7 @@ if (process.env.GITHUB_EVENT_NAME === "push") {
     await writeFile("site/snapshot.json", JSON.stringify(unchanged ? previous : snapshot));
     await writeFile("site/history.json", JSON.stringify(nextHistory));
   }
-  if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `publish=${publish}
-  `);
+  if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `publish=${publish}\n`);
   console.log(`Historial: ${changes.filter((e) => e.action === "added").length} altes, ${changes.filter((e) => e.action === "removed").length} baixes`);
   console.log(unchanged ? "Sense canvis en els establiments ni les etiquetes" : `Dades noves: ${snapshot.all.length} establiments, ${snapshot.errors.length} errors`);
   console.log(publish ? "Cal publicar GitHub Pages" : "Es conserva la publicació existent");
