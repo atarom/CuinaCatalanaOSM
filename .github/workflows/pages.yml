@@ -47,7 +47,7 @@ jobs:
         if: steps.data.outputs.publish == 'true'
       - name: Preparar web
         if: steps.data.outputs.publish == 'true'
-        run: cp index.html script.js style.css data-core.mjs MapMarker.png favicon.ico site/
+        run: cp index.html script.js style.css data-client.mjs MapMarker.png favicon.ico site/
       - uses: actions/upload-pages-artifact@v5
         if: steps.data.outputs.publish == 'true'
         with:
