@@ -1,6 +1,25 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl.mjs";
 import { cooldownSeconds, fetchPostpass, prepareSnapshot, validHistory, validSnapshot } from "./data-core.mjs";
 document.addEventListener("DOMContentLoaded", () => {
+  const mobileSections = [...document.querySelectorAll(".mobile-section")];
+  const mobileTabs = [...document.querySelectorAll(".mobile-tab")];
+  const mobileLayout = window.matchMedia("(max-width: 900px)");
+  let activeMobileSection = "names";
+  const showMobileSection = (id) => {
+    activeMobileSection = id;
+    mobileSections.forEach((section) => section.open = section.dataset.mobileSection === id);
+    mobileTabs.forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.mobileTarget === id)));
+  };
+  const syncMobileSections = () => {
+    if (mobileLayout.matches) showMobileSection(activeMobileSection);
+    else mobileSections.forEach((section) => section.open = true);
+  };
+  mobileTabs.forEach((tab) => tab.addEventListener("click", () => showMobileSection(tab.dataset.mobileTarget)));
+  mobileSections.forEach((section) => section.addEventListener("toggle", () => {
+    if (!mobileLayout.matches && !section.open) section.open = true;
+  }));
+  syncMobileSections();
+  mobileLayout.addEventListener("change", syncMobileSections);
   const $ = document.getElementById.bind(document);
   const ce = (t, c, x) => Object.assign(document.createElement(t), { className: c || "", textContent: x ?? "" });
   const ld = $("loading"), er = $("error-list"), el = $("establishment-list"), ml = $("shared-left-list"), ul = $("shared-right-list"), refresh = $("refresh-data"), age = $("data-age");
