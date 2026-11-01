@@ -26,7 +26,7 @@
 </div>
 </details>
 <details class="guide history" aria-label="Historial d'altes i baixes">
-<summary title="Historial de canvis" aria-label="Obre l'historial de canvis">↺</summary>
+<summary title="Historial de canvis" aria-label="Obre l'historial de canvis" style="align-items:center;justify-content:center;padding:2px"><svg aria-hidden="true" focusable="false" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></summary>
 <div class="guide-panel history-panel">
 <h3>Historial de canvis</h3>
 <p class="history-note">Altes i baixes detectades entre consultes automàtiques. Una baixa no implica necessàriament el tancament de l'establiment.</p>
@@ -60,5 +60,6 @@
 </details>
 </div>
 <script type="module" src="script.js"></script>
+<script>document.addEventListener("pointerdown",(e)=>{const history=document.querySelector(".guide.history[open]");if(history&&!history.contains(e.target))history.open=false;},true);</script>
 </body>
 </html>
